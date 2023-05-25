@@ -6,7 +6,6 @@ const { v4: uuidv4 } = require('uuid');
 const DYNAMODB_TABLE_NAME = process.env.DYNAMODB_TABLE_NAME;
 
 async function getTripsForUser(userId) {
-  // Get all trips details for a user
   const params = {
     TableName: DYNAMODB_TABLE_NAME,
     IndexName: 'Users-Trips-view',
@@ -100,6 +99,7 @@ async function createTripForUser(userId, trip_name) {
       trip_name,
       trip_status,
     };
+
     return { statusCode: 201, body: JSON.stringify(response) };
   } catch (err) {
     console.error(err);
@@ -149,7 +149,9 @@ async function modifyTrip(tripId, trip_name, trip_status) {
       const updatedItem = await dynamoDB.update(params).promise();
       return updatedItem.Attributes; // return only the updated attributes
     });
+
     const updatedItems = await Promise.all(updatePromises);
+
     return { statusCode: 200, body: JSON.stringify(updatedItems) };
   } catch (err) {
     console.error(err);
@@ -202,6 +204,7 @@ async function deleteTrip(tripId) {
     };
     deletePromises.push(dynamoDB.delete(params).promise());
   }
+  
   await Promise.all(deletePromises);
   return { statusCode: 200, body: 'Trip and associated records deleted successfully' };
 }
