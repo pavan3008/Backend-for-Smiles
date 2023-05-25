@@ -9,7 +9,7 @@ exports.handler = async (event, context) => {
 
     const httpMethod = event.httpMethod.toUpperCase();
     const { path } = event;
-    const {id} = event.pathParameters || {};
+    const { id } = event.pathParameters || {};
     const { trip_name, trip_status } = event.body ? JSON.parse(event.body) : {};
     const { task_name, task_status } = event.body ? JSON.parse(event.body) : {};
     const { expense_name, amount } = event.body ? JSON.parse(event.body) : {};
