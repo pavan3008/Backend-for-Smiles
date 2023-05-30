@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+require('dotenv').config();
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const { v4: uuidv4 } = require("uuid");
@@ -21,12 +22,15 @@ async function getTasksForTrip(tripId) {
   try {
     const result = await dynamoDB.query(params).promise();
 
+    const tasks = result.Items.map(item => ({
+      taskId: item.PK.replace('Task', ''),
+      taskName: item.task_object.task_name,
+      taskStatus: item.task_object.task_status
+    }));
+
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        Items: result.Items,
-        Count: result.Count,
-      }),
+      body: JSON.stringify(tasks),
     };
   } catch (error) {
     console.error(error);
@@ -85,7 +89,7 @@ async function createTaskForTrip(tripId, taskName) {
       taskId: taskId.replace('Task', ''),
       tripId,
       taskName,
-      task_status: "incomplete",
+      taskStatus: "incomplete",
     };
     return { statusCode: 201, body: JSON.stringify(response) };
   } catch (err) {
@@ -115,7 +119,7 @@ async function updateTaskForTrip(taskId, taskName, taskStatus) {
     params.ExpressionAttributeValues[":taskName"] = taskName;
   }
 
-  // Conditionally add the expense amount update expression and value
+  // Conditionally add the task status update expression and value
   if (taskStatus) {
     if (taskName) {
       params.UpdateExpression += ", ";
@@ -126,8 +130,16 @@ async function updateTaskForTrip(taskId, taskName, taskStatus) {
 
   try {
     const result = await dynamoDB.update(params).promise();
-    const expense = result.Attributes;
-    return { statusCode: 200, body: JSON.stringify(expense) };
+    const task = result.Attributes;
+    const updatedTask = {
+      taskId: task.PK.replace('Task', ''),
+      taskName: task.task_object.task_name,
+      taskStatus: task.task_object.task_status,
+    };
+    return {
+      statusCode: 200,
+      body: JSON.stringify(updatedTask),
+    };
   } catch (err) {
     console.error(err);
     return {
@@ -145,7 +157,7 @@ async function deleteTaskForTrip(taskId) {
         SK: `Task${taskId}`,
       },
     };
-  
+
     try {
       await dynamoDB.delete(params).promise();
       return { statusCode: 200, body: JSON.stringify({ message: 'Task deleted successfully' }) };
@@ -154,7 +166,7 @@ async function deleteTaskForTrip(taskId) {
       return { statusCode: 500, body: JSON.stringify({ error: 'Error deleting task' }) };
     }
   }
-  
+
 
 module.exports = {
   getTasksForTrip,

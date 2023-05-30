@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
 const DYNAMODB_TABLE_NAME = process.env.DYNAMODB_TABLE_NAME;
 
