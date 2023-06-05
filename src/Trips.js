@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+require('dotenv').config();
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const { v4: uuidv4 } = require('uuid');
@@ -135,7 +136,7 @@ async function modifyTrip(tripId, trip_name, trip_status) {
 
   try {
     const queryResult = await dynamoDB.query(queryParams).promise();
-    const updatePromises = queryResult.Items.map(async (item) => {
+    const updatedItems = queryResult.Items.map(async (item) => {
       const params = {
         TableName: DYNAMODB_TABLE_NAME,
         Key: {
@@ -144,15 +145,19 @@ async function modifyTrip(tripId, trip_name, trip_status) {
         },
         UpdateExpression: updateExpression,
         ExpressionAttributeValues: expressionAttributeValues,
-        ReturnValues: 'ALL_NEW',
+        ReturnValues: 'UPDATED_NEW',
       };
       const updatedItem = await dynamoDB.update(params).promise();
-      return updatedItem.Attributes; // return only the updated attributes
+      return {
+        PK: item.PK.replace('Trip', ''),
+        tripName: updatedItem.Attributes.trip_name,
+        status: updatedItem.Attributes.trip_status,
+      };
     });
 
-    const updatedItems = await Promise.all(updatePromises);
+    const items = await Promise.all(updatedItems);
 
-    return { statusCode: 200, body: JSON.stringify(updatedItems) };
+    return { statusCode: 200, body: JSON.stringify(items) };
   } catch (err) {
     console.error(err);
     return { statusCode: 500, body: JSON.stringify({ message: 'Error updating trip' }) };
